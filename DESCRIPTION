@@ -1,0 +1,11 @@
+Package: mutcomfocal
+Type: Package
+Title: Analysis of copy number and mutation data.
+Version: 1.0
+Date: 2013-09-02
+Author: Vladimir Trifonov
+Maintainer: Vladimir Trifonov <v_trifonov@yahoo.com>
+Description: This package implements recurrence and focality scores necessary for the integrated analysis of copy number and mutation data.
+License: GPL (>=2)
+Depends: R (>= 2.15.0), hash, data.table
+Packaged: 2013-09-10 04:25:17 UTC; vlado
