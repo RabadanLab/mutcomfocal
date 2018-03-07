@@ -121,77 +121,104 @@ lesions.mcf_ref<-function(r, cnv, mut) {
     require(hash);
     require(data.table);
 
+    # x2 contains the union of case/sample ids in cnv and mut
     x2<-sort(unique(c(cnv[,1], mut[,1])));
+    # x2 to dataframe with additional ordinal index column
     x2<-data.frame(x2, 1:length(x2));
+    # x3 is cnv transformed into a dataframe, with case/sample id
+    # column moved at the end
     x3<-data.frame(cnv[,-1], cnv[,1]);
+    # if chromosome X and Y are named "23" and "24" they are
+    # reverted to "X" and "Y"
     x3[,1]<-gsub("24", "Y", gsub("23", "X", x3[,1]));
+    # sort x3 in ascending order by first, second and third column,
+    # then add a new ordinal index column
     x3<-data.frame(x3[order(x3[,1], x3[,2], x3[,3]),], 1:nrow(x3));
 
     chr<-list();
+    # for each chromosome
     for(c in sort(unique(x3[,1]))) {
+        # create a dataframe by splitting x3 (cnv)
         chr[[c]]<-list();
+        # also create a column with zeroes and
+        # remove the chromosome name column
         chr[[c]]$x1<-data.frame(0, x3[x3[,1]==c,-1]);
     }
+    # now cnv is split into a set of dataframe, each one for
+    # each chromosome
     
+    # shift the first column of mut to second position and add
+    # a new ordinal index column
     g.x9.2<-data.frame(mut[,-1], mut[,1], 1:nrow(mut));
+    # get a sorted list of the distinct mutations appearing in
+    # mut
     x9.3<-sort(unique(g.x9.2[,1]));
         
+    # for each chromosome, uses 'within' to work in the
+    # namespace of this chromosome, e.g. res <- 1 in this
+    # context will result into the creation of res within
+    # chr[[c]], e.g. chr[[c]]$res <-1
     for(c in names(chr)) chr[[c]]<-within(chr[[c]], {
-        cat(c, "\n");
-        x9.7<-r$chr_list[[c]];
-        x9.1<-data.frame(paste(x9.7[,4], c, sep="@"), x9.7[,4], x9.7[,1], x9.7[,2]);
-        x9.2<-sort(unique(x9.1[,1]));
-        
-        x9.3<-g.x9.2;
-        x9.3<-x9.3[x9.3[,1] %in% x9.2,];
-        x9.4<-data.frame(x9.3, x9.1[match(x9.3[,1], x9.1[,1]),-1]);
-        x9.4<-data.frame(1, x9.4[,4], x9.4, 1, x9.4[,3]);    
-        x9.4<-x9.4[,c(1,2,4,7:ncol(x9.4))];
-        x9.5<-data.frame(x9.1[,1], c, x9.1[,2:3]);
-        
-        x2<-data.frame(x1[,2:3], 1, x1[,7], 0+(x1[,5]<0), abs(x1[,5]), x1[,6]);
-        
-        x2.2.1<-data.frame(paste(c, 0, x2[,5], sep="_"), c, x2[,2:3], x2[6:7]);
-        colnames(x2.2.1)<-1:6;
-        x2.2.2<-data.frame(paste(c, x9.4[,1], x9.4[,7], sep="_"), c, x9.4[,4:5], 1+x9.4[,1], x9.4[,6]);
-        colnames(x2.2.2)<-1:6;    
-        x2.2<-rbind(x2.2.1, x2.2.2);
-        
-        x3.1<-segsmerge(list(x2, x9.7));
-        
-        f<-hash();
-        x2_9<-as.matrix(x2[,c(1:2,5)]);
-        x2_10<-as.matrix(x9.7[,1:2]);
-        x3<-lapply(x3.1, function (x) {
-            x2_1<-x[[2]][x[[2]][,"i"]==1,"n"];
-            x2_2<-x[[2]][x[[2]][,"i"]==2,"n"];
-            if (length(x2_1)>0 && length(x2_2)>0) {
-                x3_3<-as.matrix(expand.grid(x2_1, x2_2));
-                x3_3<-unique(x3_3);
-                x3_4<-paste(x3_3[,1], x3_3[,2]);
-                x3_5<-!has.key(x3_4, f);
-                x3_4<-x3_4[x3_5];
-                x3_3<-x3_3[x3_5,,drop=FALSE];
-                x3_3<-cbind(x3_3, x2_9[x3_3[,1],,drop=FALSE], x2_10[x3_3[,2],,drop=FALSE]);
-                x3_5<-x3_3[,5]==1 | x3_3[,5]!=1&x3_3[,3]<=x3_3[,6]&x3_3[,7]<=x3_3[,4];
-                x3_4<-x3_4[x3_5];
-                if (length(x3_4)>0) f[x3_4]<-1;
-                as.data.frame(x3_3[x3_5,1:2,drop=FALSE]);
-            }
-        });
-        x3<-as.matrix(rbindlist(x3));
-        x3<-data.frame(x9.7[x3[,2], c(4,1,2)], paste(c, 0, x2[x3[,1],4], sep="_"), x2[x3[,1],5:7]);
-        setnames(x3, as.character(1:ncol(x3)));
-        
-        x3.2<-data.frame(x9.4[,c(2,4,5)], paste(c, x9.4[,1], x9.4[,7], sep="_"), x9.4[,1]+1, x9.4[,c(6,3)]);
-        colnames(x3.2)<-1:ncol(x3.2);
-        
-        x7.0<-rbind(x3, x3.2);
-        x7.0_1<-paste(x7.0[,1], x7.0[,4], sep="@");
-        x7.0_1<-do.call(rbind, strsplit(x7.0_1, "_", fixed=TRUE));
-        x7.0<-data.frame(x7.0_1[,1], x7.0);
-        x7.0<-data.frame(x7.0[,8], x7.0);
-        x7.0<-data.frame(x7.0[,c(1,2,6,7,8)]);
+        # FGB: execute following code only if chromosome is present in reference
+        if (c %in% ls(r$chr_list)) {
+            # print to screen the chromosome that is being analyzed
+            cat(c, "\n");
+            # save reference genes for chromosome in x9.7
+            x9.7<-r$chr_list[[c]];
+            x9.1<-data.frame(paste(x9.7[,4], c, sep="@"), x9.7[,4], x9.7[,1], x9.7[,2]);
+            x9.2<-sort(unique(x9.1[,1]));
+
+            x9.3<-g.x9.2;
+            x9.3<-x9.3[x9.3[,1] %in% x9.2,];
+            x9.4<-data.frame(x9.3, x9.1[match(x9.3[,1], x9.1[,1]),-1]);
+            x9.4<-data.frame(1, x9.4[,4], x9.4, 1, x9.4[,3]);
+            x9.4<-x9.4[,c(1,2,4,7:ncol(x9.4))];
+            x9.5<-data.frame(x9.1[,1], c, x9.1[,2:3]);
+
+            x2<-data.frame(x1[,2:3], 1, x1[,7], 0+(x1[,5]<0), abs(x1[,5]), x1[,6]);
+
+            x2.2.1<-data.frame(paste(c, 0, x2[,5], sep="_"), c, x2[,2:3], x2[6:7]);
+            colnames(x2.2.1)<-1:6;
+            x2.2.2<-data.frame(paste(c, x9.4[,1], x9.4[,7], sep="_"), c, x9.4[,4:5], 1+x9.4[,1], x9.4[,6]);
+            colnames(x2.2.2)<-1:6;
+            x2.2<-rbind(x2.2.1, x2.2.2);
+
+            x3.1<-segsmerge(list(x2, x9.7));
+
+            f<-hash();
+            x2_9<-as.matrix(x2[,c(1:2,5)]);
+            x2_10<-as.matrix(x9.7[,1:2]);
+            x3<-lapply(x3.1, function (x) {
+                x2_1<-x[[2]][x[[2]][,"i"]==1,"n"];
+                x2_2<-x[[2]][x[[2]][,"i"]==2,"n"];
+                if (length(x2_1)>0 && length(x2_2)>0) {
+                    x3_3<-as.matrix(expand.grid(x2_1, x2_2));
+                    x3_3<-unique(x3_3);
+                    x3_4<-paste(x3_3[,1], x3_3[,2]);
+                    x3_5<-!has.key(x3_4, f);
+                    x3_4<-x3_4[x3_5];
+                    x3_3<-x3_3[x3_5,,drop=FALSE];
+                    x3_3<-cbind(x3_3, x2_9[x3_3[,1],,drop=FALSE], x2_10[x3_3[,2],,drop=FALSE]);
+                    x3_5<-x3_3[,5]==1 | x3_3[,5]!=1&x3_3[,3]<=x3_3[,6]&x3_3[,7]<=x3_3[,4];
+                    x3_4<-x3_4[x3_5];
+                    if (length(x3_4)>0) f[x3_4]<-1;
+                    as.data.frame(x3_3[x3_5,1:2,drop=FALSE]);
+                }
+            });
+            x3<-as.matrix(rbindlist(x3));
+            x3<-data.frame(x9.7[x3[,2], c(4,1,2)], paste(c, 0, x2[x3[,1],4], sep="_"), x2[x3[,1],5:7]);
+            setnames(x3, as.character(1:ncol(x3)));
+
+            x3.2<-data.frame(x9.4[,c(2,4,5)], paste(c, x9.4[,1], x9.4[,7], sep="_"), x9.4[,1]+1, x9.4[,c(6,3)]);
+            colnames(x3.2)<-1:ncol(x3.2);
+
+            x7.0<-rbind(x3, x3.2);
+            x7.0_1<-paste(x7.0[,1], x7.0[,4], sep="@");
+            x7.0_1<-do.call(rbind, strsplit(x7.0_1, "_", fixed=TRUE));
+            x7.0<-data.frame(x7.0_1[,1], x7.0);
+            x7.0<-data.frame(x7.0[,8], x7.0);
+            x7.0<-data.frame(x7.0[,c(1,2,6,7,8)]);
+        } # FGB: end of added block
     });
     x7.0<-do.call(rbind, lapply(chr, function (x) x$x7.0));
 
