@@ -162,7 +162,7 @@ lesions.mcf_ref<-function(r, cnv, mut) {
         # FGB: execute following code only if chromosome is present in reference
         if (c %in% ls(r$chr_list)) {
             # print to screen the chromosome that is being analyzed
-            cat(c, "\n");
+            cat("Working on chromosome", c, "\n");
             # save reference genes for chromosome in x9.7
             x9.7<-r$chr_list[[c]];
             x9.1<-data.frame(paste(x9.7[,4], c, sep="@"), x9.7[,4], x9.7[,1], x9.7[,2]);
